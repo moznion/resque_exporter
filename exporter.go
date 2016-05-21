@@ -8,6 +8,8 @@ import (
 	"gopkg.in/redis.v3"
 )
 
+const namespace = "resque"
+
 type exporter struct {
 	config         *Config
 	mut            *sync.Mutex

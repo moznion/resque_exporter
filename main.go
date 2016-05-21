@@ -10,10 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const (
-	namespace = "resque"
-	version   = "0.0.1"
-)
+const version = "0.0.1"
 
 type opt struct {
 	Help    bool   `cli:"h,help" usage:"display help"`
