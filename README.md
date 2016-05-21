@@ -21,6 +21,15 @@ e.g.
 $ ./resque_exporter --config /path/to/config.yml
 ```
 
+Sample Output
+--
+
+```
+# HELP resque_jobs_in_queue{queue_name="image_converting"} Number of remained jobs of image_converting
+# TYPE resque_jobs_in_queue{queue_name="image_converting"} counter
+resque_jobs_in_queue{queue_name="image_converting"} 123
+```
+
 Note
 --
 
