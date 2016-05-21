@@ -35,6 +35,11 @@ Note
 
 This exporter also supports resque compatible job-queue engine (e.g. [jesque](https://github.com/gresrun/jesque)).
 
+[For developers] How to build to release
+--
+
+Execute `make build VERSION=${version}` on __Docker available__ environment. Built binaries will be on `bin` directory.
+
 License
 --
 
