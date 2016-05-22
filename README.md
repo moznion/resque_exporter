@@ -30,6 +30,14 @@ Sample Output
 resque_jobs_in_queue{queue_name="image_converting"} 123
 ```
 
+Mechanism
+--
+
+This exporter accesses to redis to aggregate queue status.
+
+1. Collect name of queues via `<namespace>:queues` entry (by using [SMEMBERS](http://redis.io/commands/smembers))
+1. Get number of remained jobs for each queue via `<namespace>:queue:<queue_name>` entry (by using [LLEN](http://redis.io/commands/llen))
+
 Note
 --
 
