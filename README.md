@@ -10,8 +10,8 @@ Usage
 Options:
 
   -h, --help            display help
-  -v, --version         display version
-  -p, --port[=5555]     set port number (default port: 5555)
+  -v, --version         display version and revision
+  -p, --port[=5555]     set port number
   -c, --config          set path to config file
 ```
 

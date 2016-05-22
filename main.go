@@ -10,12 +10,15 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-const version = "0.0.1"
+var (
+	rev string
+	ver string
+)
 
 type opt struct {
 	Help    bool   `cli:"h,help" usage:"display help"`
-	Version bool   `cli:"v,version" usage:"display version"`
-	Port    int    `cli:"p,port" usage:"set port number (default port: 5555)" dft:"5555"`
+	Version bool   `cli:"v,version" usage:"display version and revision"`
+	Port    int    `cli:"p,port" usage:"set port number" dft:"5555"`
 	Config  string `cli:"c,config" usage:"set path to config file"`
 }
 
@@ -31,7 +34,7 @@ func Run(args []string) {
 		}
 
 		if argv.Version {
-			ctx.String(fmt.Sprintf("%s\n", version))
+			ctx.String(fmt.Sprintf("%s/%s\n", ver, rev))
 			os.Exit(0)
 		}
 
