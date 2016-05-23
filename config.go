@@ -8,7 +8,7 @@ import (
 )
 
 type Config struct {
-	resqueNamespace string       `yaml:"resque_namespace"`
+	ResqueNamespace string       `yaml:"resque_namespace"`
 	Redis           *RedisConfig `yaml:"redis"`
 }
 
