@@ -23,8 +23,9 @@ func newExporter(config *Config) (*exporter, error) {
 		config: config,
 		queueStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
-				Name: "jobs_in_queue",
-				Help: "Number of remained jobs in queue",
+				Namespace: namespace,
+				Name:      "jobs_in_queue",
+				Help:      "Number of remained jobs in queue",
 			},
 			[]string{"queue_name"},
 		),
