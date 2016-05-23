@@ -19,7 +19,7 @@ for GOOS in darwin linux; do
     export GOOS
     export GOARCH
     go build -v -ldflags "-X ${PACKAGE}.rev=$REV -X ${PACKAGE}.ver=$VER" \
-      -o bin/resque_exporter-$GOOS-$GOARCH cmd/resque_exporter/resque_exporter.go
+      -o bin/resque_exporter-$GOOS-$GOARCH-$VER cmd/resque_exporter/resque_exporter.go
   done
 done
 
