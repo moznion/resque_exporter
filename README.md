@@ -25,9 +25,10 @@ Sample Output
 --
 
 ```
-# HELP resque_jobs_in_queue{queue_name="image_converting"} Number of remained jobs of image_converting
-# TYPE resque_jobs_in_queue{queue_name="image_converting"} counter
-resque_jobs_in_queue{queue_name="image_converting"} 123
+# HELP jobs_in_queue Number of remained jobs in queue
+# TYPE jobs_in_queue gauge
+jobs_in_queue{queue_name="image_converting"} 0
+jobs_in_queue{queue_name="log_compression"} 0
 ```
 
 Mechanism
