@@ -2,6 +2,7 @@ package resqueExporter
 
 import (
 	"fmt"
+	"strconv"
 	"sync"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -14,6 +15,8 @@ type exporter struct {
 	config         *Config
 	mut            *sync.Mutex
 	scrapeFailures prometheus.Counter
+	processed      prometheus.Gauge
+	failed         prometheus.Gauge
 	queueStatus    *prometheus.GaugeVec
 }
 
@@ -29,6 +32,16 @@ func newExporter(config *Config) (*exporter, error) {
 			},
 			[]string{"queue_name"},
 		),
+		processed: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "processed",
+			Help:      "Number of processed jobs",
+		}),
+		failed: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "failed",
+			Help:      "Number of failed jobs",
+		}),
 		scrapeFailures: prometheus.NewCounter(prometheus.CounterOpts{
 			Namespace: namespace,
 			Name:      "exporter_scrape_failures_total",
@@ -69,7 +82,26 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		e.queueStatus.WithLabelValues(q).Set(float64(n))
 	}
+
+	processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", e.config.ResqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+	processedCnt, _ := strconv.ParseFloat(processed, 64)
+	e.processed.Set(processedCnt)
+
+	failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", e.config.ResqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+	failedCnt, _ := strconv.ParseFloat(failed, 64)
+	e.failed.Set(failedCnt)
+
 	e.queueStatus.Collect(ch)
+	e.processed.Collect(ch)
+	e.failed.Collect(ch)
 }
 
 func (e *exporter) incrementFailures(ch chan<- prometheus.Metric) {
