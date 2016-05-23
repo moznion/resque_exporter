@@ -29,6 +29,12 @@ Sample Output
 # TYPE resque_jobs_in_queue gauge
 resque_jobs_in_queue{queue_name="image_converting"} 0
 resque_jobs_in_queue{queue_name="log_compression"} 0
+# HELP resque_failed Number of failed jobs
+# TYPE resque_failed gauge
+resque_failed 123
+# HELP resque_processed Number of processed jobs
+# TYPE resque_processed gauge
+resque_processed 1.234567e+06
 ```
 
 Mechanism
@@ -38,6 +44,8 @@ This exporter accesses to redis to aggregate queue status.
 
 1. Collect name of queues via `<namespace>:queues` entry (by using [SMEMBERS](http://redis.io/commands/smembers))
 1. Get number of remained jobs for each queue via `<namespace>:queue:<queue_name>` entry (by using [LLEN](http://redis.io/commands/llen))
+1. Get number of processed jobs via `<namespace>:stat:processed`
+1. Get number of failed jobs via `<namespace>:stat:failed`
 
 Note
 --
