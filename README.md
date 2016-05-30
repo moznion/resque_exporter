@@ -21,6 +21,21 @@ e.g.
 $ ./resque_exporter --config /path/to/config.yml
 ```
 
+Description
+--
+
+This exporter exports following items.
+
+- Number of remained jobs in queue
+- Number of processed jobs
+- Number of failed jobs
+
+Configuration
+--
+
+You may write configuration file and pass that through CLI option.  
+Please refer to [sample_config.yml](./sample_config.yml).
+
 Sample Output
 --
 
