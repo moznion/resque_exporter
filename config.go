@@ -8,8 +8,9 @@ import (
 )
 
 type Config struct {
-	ResqueNamespace string       `yaml:"resque_namespace"`
-	Redis           *RedisConfig `yaml:"redis"`
+	GuardIntervalMillis int64        `yaml:"guard_interval_millis"`
+	ResqueNamespace     string       `yaml:"resque_namespace"`
+	Redis               *RedisConfig `yaml:"redis"`
 }
 
 type RedisConfig struct {
