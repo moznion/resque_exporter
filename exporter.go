@@ -19,6 +19,9 @@ type exporter struct {
 	processed      prometheus.Gauge
 	failed         prometheus.Gauge
 	queueStatus    *prometheus.GaugeVec
+	totalWorkers   prometheus.Gauge
+	activeWorkers  prometheus.Gauge
+	idleWorkers    prometheus.Gauge
 	gate           bool
 }
 
@@ -50,6 +53,21 @@ func newExporter(config *Config) (*exporter, error) {
 			Name:      "exporter_scrape_failures_total",
 			Help:      "Number of errors while scraping resque.",
 		}),
+		totalWorkers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "total_workers",
+			Help:      "Number of workers",
+		}),
+		activeWorkers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "active_workers",
+			Help:      "Number of active workers",
+		}),
+		idleWorkers: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "idle_workers",
+			Help:      "Number of idle workers",
+		}),
 	}
 	go e.runTicker()
 
@@ -62,6 +80,8 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
+	resqueNamespace := e.config.ResqueNamespace
+
 	if e.gate {
 		e.mut.Lock() // To protect metrics from concurrent collects.
 		defer e.mut.Unlock()
@@ -75,14 +95,14 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		redis := redis.NewClient(redisOpt)
 		defer redis.Close()
 
-		queues, err := redis.SMembers(fmt.Sprintf("%s:queues", e.config.ResqueNamespace)).Result()
+		queues, err := redis.SMembers(fmt.Sprintf("%s:queues", resqueNamespace)).Result()
 		if err != nil {
 			e.incrementFailures(ch)
 			return
 		}
 
 		for _, q := range queues {
-			n, err := redis.LLen(fmt.Sprintf("%s:queue:%s", e.config.ResqueNamespace, q)).Result()
+			n, err := redis.LLen(fmt.Sprintf("%s:queue:%s", resqueNamespace, q)).Result()
 			if err != nil {
 				e.incrementFailures(ch)
 				return
@@ -90,7 +110,7 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 			e.queueStatus.WithLabelValues(q).Set(float64(n))
 		}
 
-		processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", e.config.ResqueNamespace)).Result()
+		processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", resqueNamespace)).Result()
 		if err != nil {
 			e.incrementFailures(ch)
 			return
@@ -98,13 +118,33 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		processedCnt, _ := strconv.ParseFloat(processed, 64)
 		e.processed.Set(processedCnt)
 
-		failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", e.config.ResqueNamespace)).Result()
+		failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", resqueNamespace)).Result()
 		if err != nil {
 			e.incrementFailures(ch)
 			return
 		}
 		failedCnt, _ := strconv.ParseFloat(failed, 64)
 		e.failed.Set(failedCnt)
+
+		workers, err := redis.SMembers(fmt.Sprintf("%s:workers", resqueNamespace)).Result()
+		if err != nil {
+			e.incrementFailures(ch)
+			return
+		}
+		e.totalWorkers.Set(float64(len(workers)))
+
+		activeWorkers := 0
+		idleWorkers := 0
+		for _, w := range workers {
+			_, err := redis.Get(fmt.Sprintf("%s:worker:%s", resqueNamespace, w)).Result()
+			if err == nil {
+				activeWorkers++
+			} else {
+				idleWorkers++
+			}
+		}
+		e.activeWorkers.Set(float64(activeWorkers))
+		e.idleWorkers.Set(float64(idleWorkers))
 
 		if e.config.GuardIntervalMillis > 0 {
 			e.gate = false
@@ -114,6 +154,9 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 	e.queueStatus.Collect(ch)
 	e.processed.Collect(ch)
 	e.failed.Collect(ch)
+	e.totalWorkers.Collect(ch)
+	e.activeWorkers.Collect(ch)
+	e.idleWorkers.Collect(ch)
 }
 
 func (e *exporter) incrementFailures(ch chan<- prometheus.Metric) {
