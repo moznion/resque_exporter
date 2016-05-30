@@ -29,6 +29,9 @@ This exporter exports following items.
 - Number of remained jobs in queue
 - Number of processed jobs
 - Number of failed jobs
+- Number of total workers
+- Number of active workers
+- Number of idle workers
 
 Configuration
 --
