@@ -1,7 +1,7 @@
 resque_exporter
 ==
 
-An exporter of [Prometheus](https://prometheus.io) for [resque](https://github.com/resque/resque)'s queue status.
+An exporter of [Prometheus](https://prometheus.io) for [resque](https://github.com/resque/resque)'s status.
 
 Usage
 --
@@ -35,17 +35,28 @@ resque_failed 123
 # HELP resque_processed Number of processed jobs
 # TYPE resque_processed gauge
 resque_processed 1.234567e+06
+# HELP resque_active_workers Number of active workers
+# TYPE resque_active_workers gauge
+resque_active_workers 2
+# HELP resque_idle_workers Number of idle workers
+# TYPE resque_idle_workers gauge
+resque_idle_workers 8
+# HELP resque_total_workers Number of workers
+# TYPE resque_total_workers gauge
+resque_total_workers 10
 ```
 
 Mechanism
 --
 
-This exporter accesses to redis to aggregate queue status.
+This exporter accesses to redis to aggregate status.
 
 1. Collect name of queues via `<namespace>:queues` entry (by using [SMEMBERS](http://redis.io/commands/smembers))
 1. Get number of remained jobs for each queue via `<namespace>:queue:<queue_name>` entry (by using [LLEN](http://redis.io/commands/llen))
 1. Get number of processed jobs via `<namespace>:stat:processed`
 1. Get number of failed jobs via `<namespace>:stat:failed`
+1. Collect name of workers via `<namespace>:workers` entry (by using [SMEMBERS](http://redis.io/commands/smembers))
+1. Count number of active workers and idle workers by getting for each workers status entry `<namespace>:worker:<worker_name>`.
 
 Note
 --
