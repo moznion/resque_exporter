@@ -22,14 +22,14 @@ type exporter struct {
 	totalWorkers   prometheus.Gauge
 	activeWorkers  prometheus.Gauge
 	idleWorkers    prometheus.Gauge
-	gate           bool
+	ticker         chan struct{}
 }
 
 func newExporter(config *Config) (*exporter, error) {
 	e := &exporter{
 		mut:    new(sync.Mutex),
 		config: config,
-		gate:   true,
+		ticker: make(chan struct{}, 1),
 		queueStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
@@ -82,7 +82,8 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 	resqueNamespace := e.config.ResqueNamespace
 
-	if e.gate {
+	select {
+	case <-e.ticker:
 		e.mut.Lock() // To protect metrics from concurrent collects.
 		defer e.mut.Unlock()
 
@@ -145,10 +146,8 @@ func (e *exporter) Collect(ch chan<- prometheus.Metric) {
 		}
 		e.activeWorkers.Set(float64(activeWorkers))
 		e.idleWorkers.Set(float64(idleWorkers))
-
-		if e.config.GuardIntervalMillis > 0 {
-			e.gate = false
-		}
+	default:
+		// NOP
 	}
 
 	e.queueStatus.Collect(ch)
@@ -169,7 +168,9 @@ func (e *exporter) runTicker() {
 	if guardIntervalMillis > 0 {
 		guardIntervalDuration := time.Duration(guardIntervalMillis) * time.Millisecond
 		for _ = range time.Tick(guardIntervalDuration) {
-			e.gate = true
+			e.ticker <- struct{}{}
 		}
+	} else {
+		close(e.ticker)
 	}
 }
