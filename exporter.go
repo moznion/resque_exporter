@@ -22,14 +22,13 @@ type exporter struct {
 	totalWorkers   prometheus.Gauge
 	activeWorkers  prometheus.Gauge
 	idleWorkers    prometheus.Gauge
-	ticker         chan struct{}
+	timer          *time.Timer
 }
 
 func newExporter(config *Config) (*exporter, error) {
 	e := &exporter{
 		mut:    new(sync.Mutex),
 		config: config,
-		ticker: make(chan struct{}, 1),
 		queueStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
 				Namespace: namespace,
@@ -69,7 +68,6 @@ func newExporter(config *Config) (*exporter, error) {
 			Help:      "Number of idle workers",
 		}),
 	}
-	go e.runTicker()
 
 	return e, nil
 }
@@ -80,97 +78,93 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 }
 
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
-	resqueNamespace := e.config.ResqueNamespace
+	e.mut.Lock() // To protect metrics from concurrent collects.
+	defer e.mut.Unlock()
+	defer func() {
+		e.queueStatus.Collect(ch)
+		e.processed.Collect(ch)
+		e.failed.Collect(ch)
+		e.totalWorkers.Collect(ch)
+		e.activeWorkers.Collect(ch)
+		e.idleWorkers.Collect(ch)
+	}()
 
-	select {
-	case <-e.ticker:
-		e.mut.Lock() // To protect metrics from concurrent collects.
-		defer e.mut.Unlock()
-
-		redisConfig := e.config.Redis
-		redisOpt := &redis.Options{
-			Addr:     fmt.Sprintf("%s:%d", redisConfig.Host, redisConfig.Port),
-			Password: redisConfig.Password,
-			DB:       redisConfig.DB,
-		}
-		redis := redis.NewClient(redisOpt)
-		defer redis.Close()
-
-		queues, err := redis.SMembers(fmt.Sprintf("%s:queues", resqueNamespace)).Result()
-		if err != nil {
-			e.incrementFailures(ch)
-			return
-		}
-
-		for _, q := range queues {
-			n, err := redis.LLen(fmt.Sprintf("%s:queue:%s", resqueNamespace, q)).Result()
-			if err != nil {
-				e.incrementFailures(ch)
-				return
-			}
-			e.queueStatus.WithLabelValues(q).Set(float64(n))
-		}
-
-		processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", resqueNamespace)).Result()
-		if err != nil {
-			e.incrementFailures(ch)
-			return
-		}
-		processedCnt, _ := strconv.ParseFloat(processed, 64)
-		e.processed.Set(processedCnt)
-
-		failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", resqueNamespace)).Result()
-		if err != nil {
-			e.incrementFailures(ch)
-			return
-		}
-		failedCnt, _ := strconv.ParseFloat(failed, 64)
-		e.failed.Set(failedCnt)
-
-		workers, err := redis.SMembers(fmt.Sprintf("%s:workers", resqueNamespace)).Result()
-		if err != nil {
-			e.incrementFailures(ch)
-			return
-		}
-		e.totalWorkers.Set(float64(len(workers)))
-
-		activeWorkers := 0
-		idleWorkers := 0
-		for _, w := range workers {
-			_, err := redis.Get(fmt.Sprintf("%s:worker:%s", resqueNamespace, w)).Result()
-			if err == nil {
-				activeWorkers++
-			} else {
-				idleWorkers++
-			}
-		}
-		e.activeWorkers.Set(float64(activeWorkers))
-		e.idleWorkers.Set(float64(idleWorkers))
-	default:
-		// NOP
+	if e.timer != nil {
+		// guarded
+		return
 	}
 
-	e.queueStatus.Collect(ch)
-	e.processed.Collect(ch)
-	e.failed.Collect(ch)
-	e.totalWorkers.Collect(ch)
-	e.activeWorkers.Collect(ch)
-	e.idleWorkers.Collect(ch)
+	resqueNamespace := e.config.ResqueNamespace
+
+	redisConfig := e.config.Redis
+	redisOpt := &redis.Options{
+		Addr:     fmt.Sprintf("%s:%d", redisConfig.Host, redisConfig.Port),
+		Password: redisConfig.Password,
+		DB:       redisConfig.DB,
+	}
+	redis := redis.NewClient(redisOpt)
+	defer redis.Close()
+
+	queues, err := redis.SMembers(fmt.Sprintf("%s:queues", resqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+
+	for _, q := range queues {
+		n, err := redis.LLen(fmt.Sprintf("%s:queue:%s", resqueNamespace, q)).Result()
+		if err != nil {
+			e.incrementFailures(ch)
+			return
+		}
+		e.queueStatus.WithLabelValues(q).Set(float64(n))
+	}
+
+	processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", resqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+	processedCnt, _ := strconv.ParseFloat(processed, 64)
+	e.processed.Set(processedCnt)
+
+	failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", resqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+	failedCnt, _ := strconv.ParseFloat(failed, 64)
+	e.failed.Set(failedCnt)
+
+	workers, err := redis.SMembers(fmt.Sprintf("%s:workers", resqueNamespace)).Result()
+	if err != nil {
+		e.incrementFailures(ch)
+		return
+	}
+	e.totalWorkers.Set(float64(len(workers)))
+
+	activeWorkers := 0
+	idleWorkers := 0
+	for _, w := range workers {
+		_, err := redis.Get(fmt.Sprintf("%s:worker:%s", resqueNamespace, w)).Result()
+		if err == nil {
+			activeWorkers++
+		} else {
+			idleWorkers++
+		}
+	}
+	e.activeWorkers.Set(float64(activeWorkers))
+	e.idleWorkers.Set(float64(idleWorkers))
+
+	e.timer = time.AfterFunc(time.Duration(e.config.GuardIntervalMillis)*time.Millisecond, func() {
+		// reset timer
+		e.mut.Lock()
+		defer e.mut.Unlock()
+		e.timer = nil
+	})
 }
 
 func (e *exporter) incrementFailures(ch chan<- prometheus.Metric) {
 	e.scrapeFailures.Inc()
 	e.scrapeFailures.Collect(ch)
-}
-
-func (e *exporter) runTicker() {
-	guardIntervalMillis := e.config.GuardIntervalMillis
-	if guardIntervalMillis > 0 {
-		guardIntervalDuration := time.Duration(guardIntervalMillis) * time.Millisecond
-		for _ = range time.Tick(guardIntervalDuration) {
-			e.ticker <- struct{}{}
-		}
-	} else {
-		close(e.ticker)
-	}
 }
