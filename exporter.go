@@ -14,7 +14,7 @@ const namespace = "resque"
 
 type exporter struct {
 	config         *Config
-	mut            *sync.Mutex
+	mut            sync.Mutex
 	scrapeFailures prometheus.Counter
 	processed      prometheus.Gauge
 	failed         prometheus.Gauge
@@ -27,7 +27,6 @@ type exporter struct {
 
 func newExporter(config *Config) (*exporter, error) {
 	e := &exporter{
-		mut:    new(sync.Mutex),
 		config: config,
 		queueStatus: prometheus.NewGaugeVec(
 			prometheus.GaugeOpts{
