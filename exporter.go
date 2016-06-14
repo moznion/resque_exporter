@@ -74,6 +74,11 @@ func newExporter(config *Config) (*exporter, error) {
 func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.scrapeFailures.Describe(ch)
 	e.queueStatus.Describe(ch)
+	e.processed.Describe(ch)
+	e.failed.Describe(ch)
+	e.totalWorkers.Describe(ch)
+	e.activeWorkers.Describe(ch)
+	e.idleWorkers.Describe(ch)
 }
 
 func (e *exporter) Collect(ch chan<- prometheus.Metric) {
