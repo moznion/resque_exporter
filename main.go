@@ -64,6 +64,9 @@ func Run(args []string) {
 	prometheus.MustRegister(exporter)
 
 	http.Handle("/metrics", prometheus.Handler())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(fmt.Sprintf("%s/%s\n", ver, rev)))
+	})
 
 	addr := fmt.Sprintf(":%d", port)
 	log.Print("Listening 0.0.0.0", addr)
