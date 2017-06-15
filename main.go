@@ -65,7 +65,14 @@ func Run(args []string) {
 
 	http.Handle("/metrics", prometheus.Handler())
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(fmt.Sprintf("%s/%s\n", ver, rev)))
+		w.Write([]byte(`
+<html>
+<body>
+<h3>Resque Exporter v` + ver + `/` + rev + `</h3>
+<p><a href='/metrics'>Metrics</a></p>
+</body>
+</html>
+						`))
 	})
 
 	addr := fmt.Sprintf(":%d", port)
