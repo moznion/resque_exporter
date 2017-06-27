@@ -29,6 +29,7 @@ This exporter exports following items.
 - Number of remained jobs in queue
 - Number of processed jobs
 - Number of failed jobs
+- Number of jobs in the failed queue
 - Number of total workers
 - Number of active workers
 - Number of idle workers
@@ -58,6 +59,9 @@ resque_jobs_in_queue{queue_name="log_compression"} 0
 # HELP resque_failed Number of failed jobs
 # TYPE resque_failed gauge
 resque_failed 123
+# HELP failed_queue_count Number of jobs in the failed queue
+# TYPE failed_queue_count gauge
+failed_queue_count 1
 # HELP resque_processed Number of processed jobs
 # TYPE resque_processed gauge
 resque_processed 1.234567e+06
