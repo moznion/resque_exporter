@@ -1,0 +1,66 @@
+hash: 9ef33233887000d1c92a3d18f2fad5888b93fad011258a5680f43455a43a4a52
+updated: 2017-06-28T02:18:22.832125438+09:00
+imports:
+- name: github.com/beorn7/perks
+  version: 4c0e84591b9aa9e6dcfdf3e020114cd81f89d5f9
+  subpackages:
+  - quantile
+- name: github.com/Bowery/prompt
+  version: 14cd60563a0ae24b2902e89a5d7b2b88ad3cd884
+- name: github.com/golang/protobuf
+  version: 6a1fa9404c0aebf36c879bc50152edcc953910d2
+  subpackages:
+  - proto
+- name: github.com/labstack/gommon
+  version: 1121fd3e243c202482226a7afe4dcd07ffc4139a
+  subpackages:
+  - color
+- name: github.com/mattn/go-colorable
+  version: 941b50ebc6efddf4c41c8e4537a5f68a4e686b24
+- name: github.com/mattn/go-isatty
+  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
+- name: github.com/matttproud/golang_protobuf_extensions
+  version: c12348ce28de40eed0136aa2b644d0ee0650e56c
+  subpackages:
+  - pbutil
+- name: github.com/mkideal/cli
+  version: a9c1104566927924fdb041d198f05617492913f9
+- name: github.com/mkideal/pkg
+  version: 3e188c9e7ecc83d0fe7040a9161ce3c67885470d
+  subpackages:
+  - debug
+  - expr
+- name: github.com/prometheus/client_golang
+  version: de4d4ffe63b9eff7f27484fdef6e421597e6abb4
+  subpackages:
+  - prometheus
+- name: github.com/prometheus/client_model
+  version: 6f3806018612930941127f2a7c6c453ba2c527d2
+  subpackages:
+  - go
+- name: github.com/prometheus/common
+  version: 0866df4b85a18d652b6965be022d007cdf076822
+  subpackages:
+  - expfmt
+  - internal/bitbucket.org/ww/goautoneg
+  - model
+- name: github.com/prometheus/procfs
+  version: 822d4a1f8edcbcbc71e8d1fd6527b12331a6d0ad
+  subpackages:
+  - xfs
+- name: golang.org/x/sys
+  version: 90796e5a05ce440b41c768bd9af257005e470461
+  subpackages:
+  - unix
+- name: gopkg.in/bsm/ratelimit.v1
+  version: db14e161995a5177acef654cb0dd785e8ee8bc22
+- name: gopkg.in/redis.v3
+  version: b5e368500d0a508ef8f16e9c2d4025a8a46bcc29
+  subpackages:
+  - internal
+  - internal/consistenthash
+  - internal/hashtag
+  - internal/pool
+- name: gopkg.in/yaml.v2
+  version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+testImports: []

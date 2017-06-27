@@ -97,7 +97,7 @@ This exporter also supports resque compatible job-queue engine (e.g. [jesque](ht
 [For developers] How to build to release
 --
 
-Execute `make build VERSION=${version}` on __Docker available__ environment. Built binaries will be on `bin` directory.
+Execute `VERSION=${version} make`. Built binaries will be on `bin` directory.
 
 License
 --

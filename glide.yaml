@@ -1,0 +1,13 @@
+package: github.com/moznion/resque_exporter
+import:
+  - package: github.com/Bowery/prompt
+    version: 14cd60563a0ae24b2902e89a5d7b2b88ad3cd884 # <= fix version for 32bit OS
+  - package: github.com/mkideal/cli
+    version: a9c1104566927924fdb041d198f05617492913f9
+  - package: github.com/prometheus/client_golang
+    version: de4d4ffe63b9eff7f27484fdef6e421597e6abb4
+  - package: gopkg.in/yaml.v2
+    version: cd8b52f8269e0feb286dfeef29f8fe4d5b397e0b
+  - package: gopkg.in/redis.v3
+    version: v3.6.4
+
