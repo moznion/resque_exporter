@@ -17,7 +17,8 @@ type exporter struct {
 	mut            sync.Mutex
 	scrapeFailures prometheus.Counter
 	processed      prometheus.Gauge
-	failed         prometheus.Gauge
+	failedQueue    prometheus.Gauge
+	failedTotal    prometheus.Gauge
 	queueStatus    *prometheus.GaugeVec
 	totalWorkers   prometheus.Gauge
 	activeWorkers  prometheus.Gauge
@@ -41,7 +42,12 @@ func newExporter(config *Config) (*exporter, error) {
 			Name:      "processed",
 			Help:      "Number of processed jobs",
 		}),
-		failed: prometheus.NewGauge(prometheus.GaugeOpts{
+		failedQueue: prometheus.NewGauge(prometheus.GaugeOpts{
+			Namespace: namespace,
+			Name:      "failed_queue_count",
+			Help:      "Number of jobs in the failed queue",
+		}),
+		failedTotal: prometheus.NewGauge(prometheus.GaugeOpts{
 			Namespace: namespace,
 			Name:      "failed",
 			Help:      "Number of failed jobs",
@@ -75,7 +81,8 @@ func (e *exporter) Describe(ch chan<- *prometheus.Desc) {
 	e.scrapeFailures.Describe(ch)
 	e.queueStatus.Describe(ch)
 	e.processed.Describe(ch)
-	e.failed.Describe(ch)
+	e.failedQueue.Describe(ch)
+	e.failedTotal.Describe(ch)
 	e.totalWorkers.Describe(ch)
 	e.activeWorkers.Describe(ch)
 	e.idleWorkers.Describe(ch)
@@ -115,6 +122,12 @@ func (e *exporter) collect(ch chan<- prometheus.Metric) error {
 	redis := redis.NewClient(redisOpt)
 	defer redis.Close()
 
+	failed, err := redis.LLen(fmt.Sprintf("%s:failed", resqueNamespace)).Result()
+	if err != nil {
+		return err
+	}
+	e.failedQueue.Set(float64(failed))
+
 	queues, err := redis.SMembers(fmt.Sprintf("%s:queues", resqueNamespace)).Result()
 	if err != nil {
 		return err
@@ -135,12 +148,12 @@ func (e *exporter) collect(ch chan<- prometheus.Metric) error {
 	processedCnt, _ := strconv.ParseFloat(processed, 64)
 	e.processed.Set(processedCnt)
 
-	failed, err := redis.Get(fmt.Sprintf("%s:stat:failed", resqueNamespace)).Result()
+	failedtotal, err := redis.Get(fmt.Sprintf("%s:stat:failed", resqueNamespace)).Result()
 	if err != nil {
 		return err
 	}
-	failedCnt, _ := strconv.ParseFloat(failed, 64)
-	e.failed.Set(failedCnt)
+	failedCnt, _ := strconv.ParseFloat(failedtotal, 64)
+	e.failedTotal.Set(failedCnt)
 
 	workers, err := redis.SMembers(fmt.Sprintf("%s:workers", resqueNamespace)).Result()
 	if err != nil {
@@ -174,7 +187,8 @@ func (e *exporter) incrementFailures(ch chan<- prometheus.Metric) {
 func (e *exporter) notifyToCollect(ch chan<- prometheus.Metric) {
 	e.queueStatus.Collect(ch)
 	e.processed.Collect(ch)
-	e.failed.Collect(ch)
+	e.failedQueue.Collect(ch)
+	e.failedTotal.Collect(ch)
 	e.totalWorkers.Collect(ch)
 	e.activeWorkers.Collect(ch)
 	e.idleWorkers.Collect(ch)
