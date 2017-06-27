@@ -33,6 +33,14 @@ This exporter exports following items.
 - Number of active workers
 - Number of idle workers
 
+Paths that supported by this exporter
+--
+
+| Paths    | Description           |
+| -------- | --------------------- |
+| /metrics | Exports metrics       |
+| /\*      | Path for health check |
+
 Configuration
 --
 
@@ -75,6 +83,11 @@ This exporter accesses to redis to aggregate status.
 1. Get number of failed jobs via `<namespace>:stat:failed`
 1. Collect name of workers via `<namespace>:workers` entry (by using [SMEMBERS](http://redis.io/commands/smembers))
 1. Count number of active workers and idle workers by getting for each workers status entry `<namespace>:worker:<worker_name>`.
+
+Health Check
+--
+
+Any paths that except for `/metrics` returns response for health check. It returns 200 HTTP status code.
 
 Note
 --
