@@ -8,16 +8,16 @@ import (
 )
 
 type Config struct {
-	GuardIntervalMillis int64        `yaml:"guard_interval_millis"`
-	ResqueNamespace     string       `yaml:"resque_namespace"`
-	Redis               *RedisConfig `yaml:"redis"`
+	GuardIntervalMillis int64          `yaml:"guard_interval_millis"`
+	ResqueConfigs       []ResqueConfig `yaml:"resque"`
 }
 
-type RedisConfig struct {
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	Password string `yaml:"password"`
-	DB       int64  `yaml:"db"`
+type ResqueConfig struct {
+	Host      string `yaml:"host"`
+	Port      int    `yaml:"port"`
+	Password  string `yaml:"password"`
+	DB        int64  `yaml:"db"`
+	Namespace string `yaml:"namespace"`
 }
 
 func loadConfig(configPath string) (*Config, error) {

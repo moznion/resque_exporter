@@ -1,9 +1,8 @@
 ---
-resque_namespace: your_namespace (e.g. resque)
 guard_interval_millis: 0
-redis:
+resque:
+  - namespace: your_namespace (e.g. resque)
     host: 127.0.0.1
     port: 6379
     password: pswd
     db: 0
-
