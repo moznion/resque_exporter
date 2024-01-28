@@ -19,7 +19,7 @@ type exporter struct {
 	processed      prometheus.Gauge
 	failedQueue    prometheus.Gauge
 	failedTotal    prometheus.Gauge
-	queueStatus    *prometheus.CounterVec
+	queueStatus    *prometheus.GaugeVec
 	totalWorkers   prometheus.Gauge
 	activeWorkers  prometheus.Gauge
 	idleWorkers    prometheus.Gauge
@@ -29,8 +29,8 @@ type exporter struct {
 func newExporter(config *Config) (*exporter, error) {
 	e := &exporter{
 		config: config,
-		queueStatus: prometheus.NewCounterVec(
-			prometheus.CounterOpts{
+		queueStatus: prometheus.NewGaugeVec(
+			prometheus.GaugeOpts{
 				Namespace: namespace,
 				Name:      "jobs_in_queue",
 				Help:      "Number of remained jobs in queue",
@@ -138,7 +138,7 @@ func (e *exporter) collect(ch chan<- prometheus.Metric) error {
 		if err != nil {
 			return err
 		}
-		e.queueStatus.WithLabelValues(q).Add(float64(n))
+		e.queueStatus.WithLabelValues(q).Set(float64(n))
 	}
 
 	processed, err := redis.Get(fmt.Sprintf("%s:stat:processed", resqueNamespace)).Result()
