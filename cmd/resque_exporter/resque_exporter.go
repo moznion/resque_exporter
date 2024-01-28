@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/moznion/resque_exporter"
+	"github.com/freshdesk/resque_exporter"
 )
 
 func main() {

@@ -134,7 +134,7 @@ func (e *exporter) collect(ch chan<- prometheus.Metric) error {
 	}
 
 	for _, q := range queues {
-		n, err := redis.LLen(fmt.Sprintf("%s:queue:%s", resqueNamespace, q)).Result()
+		n, err := redis.ZCard(fmt.Sprintf("%s:queue:%s", resqueNamespace, q)).Result()
 		if err != nil {
 			return err
 		}
